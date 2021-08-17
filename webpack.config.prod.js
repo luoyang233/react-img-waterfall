@@ -3,7 +3,7 @@ const path = require('path')
 
 module.exports = {
   mode: 'production',
-  entry: path.join(__dirname, 'src/components'),
+  entry: path.join(__dirname, 'src/components/Waterfall.tsx'),
   output: {
     path: path.join(__dirname, "dist"),
     filename: "main.js",
