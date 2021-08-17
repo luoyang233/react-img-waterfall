@@ -1,6 +1,8 @@
 # react-img-waterfall
 可动态加载的React图片瀑布流
 
+
+
 ## 特性
 
 - 约定传入`img`标签
@@ -14,11 +16,15 @@
 
 [线上体验demo](https://codesandbox.io/s/zhong-ji-ban-ben-hvwgk)
 
+
+
 ## 使用
 
 ```
 npm i react-img-waterfall
 ```
+
+
 
 ### ⚠️重要
 
@@ -41,7 +47,7 @@ npm i react-img-waterfall
 ```jsx
       <Waterfall>
         {['url_0,url_1,url_2'].map((url, i) => (
-          <div class="item">
+          <div className="item">
             <img src={url} key={i} />
             <div>others</div>
           </div>
@@ -54,7 +60,7 @@ npm i react-img-waterfall
 ```jsx
     <Waterfall>
       {['url_0,url_1,url_2'].map((url, i) => (
-        <div class="item">
+        <div className="item">
           <img src={url} key={i} />
           <div>
             {/* ❌避免一个item中出现多个img标签 */}
@@ -81,6 +87,8 @@ npm i react-img-waterfall
 | concurrent      | number | 10   | false | 图片加载并发数量     |
 | extraItemHeight | number | 0    | false | item额外参与计算高度 |
 
+
+
 ### `width`
 
 统一宽度，会为每项item设置此宽度，item的高度无需设置
@@ -92,8 +100,8 @@ npm i react-img-waterfall
 ```jsx
       <Waterfall width={500}>
         {['url_0,url_1,url_2'].map((url, i) => (
-    			// 每个item的宽度都会设置为500
-          <div class="item">
+          // 每个item的宽度都会设置为500
+          <div className="item">
             <img src={url} key={i} />
             <div>others</div>
           </div>
@@ -101,17 +109,23 @@ npm i react-img-waterfall
       </Waterfall>
 ```
 
+
+
 ### `concurrent`
 
 并发数量，即图片一次性加载数量
 
 例如`concurrent={10}`，则图片一次性加载10张，随着向下滚动，触发后续加载，则再次加载10张
 
+
+
 ### `bufferHeight`
 
 缓冲高度，组件首次会一次性加载`concurrent`张，如果未超过`容器高度`+`缓冲高度`，则会立刻再次加载`concurrent`张，直到超过
 
 用户向下滚动时，`bufferHeight`同样参与计算
+
+
 
 ### `extraItemHeight`
 
@@ -124,10 +138,10 @@ item高度 = 图片高度 + 其余子节点高度 = 图片高度 + `extraItemHei
 ```jsx
       <Waterfall extraItemHeight={20}>
         {['url_0,url_1,url_2'].map((url, i) => (
-    			// 每个item的宽度都会设置为500
-          <div class="item">
+          // 每个item的宽度都会设置为500
+          <div className="item">
             <img src={url} key={i} />
-            <div style={{height:'20px'}}>others</div>
+            <div style={{ height: '20px' }}>others</div>
           </div>
         ))}
       </Waterfall>
