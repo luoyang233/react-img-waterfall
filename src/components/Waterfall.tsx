@@ -9,7 +9,7 @@ import React, {
 import { throttle } from '../utils/throttle'
 
 interface Props {
-  children: ReactElement[]
+  children: ReactElement | ReactElement[]
   col?: number
   width?: number
   marginH?: number
@@ -88,34 +88,32 @@ const Waterfall: FC<Props> = props => {
   }
 
   const round = async () => {
-    loadingRef.current = true
-    const queue = new Array<Promise<any>>()
-    const load = (url: string) => {
-      return new Promise((resolve, reject) => {
-        const img = new Image()
-        img.src = url
-        img.onload = () => resolve(img)
-        img.onerror = reject
-      })
-    }
-
     if (!Array.isArray(children)) {
-      console.warn('Only children of the passed in array type is supported')
       return
     }
 
-    children.slice(end, end + concurrent).forEach(node => {
-      queue.push(load(getImgUrl(node)))
-    })
-    for (let j = 0; j < queue.length; j++) {
-      try {
-        const img = await queue[j]
-        const node = children[end + j]
-        insert(node, img)
-      } catch (error) {
-        console.warn('Failed to load a picture')
-      }
+    loadingRef.current = true
+
+    const queue = new Array<Promise<any>>()
+    const load = (url: string) => {
+      return new Promise(resolve => {
+        const img = new Image()
+        img.src = url
+        img.onload = () => resolve(img)
+        img.onerror = () => resolve(img)
+      })
     }
+
+    children.slice(end, end + concurrent).forEach(node => {
+      queue.push(load(getImgUrl(node as ReactElement)))
+    })
+
+    for (let j = 0; j < queue.length; j++) {
+      const img = await queue[j]
+      const node = children[end + j]
+      insert(node as ReactElement, img)
+    }
+
     loadingRef.current = false
   }
 
@@ -138,16 +136,17 @@ const Waterfall: FC<Props> = props => {
     }
   }
 
-  const cloneElement = (node: ReactElement, isRoot = true): ReactElement => {
-    if (isRoot) {
+  const cloneElement = (node: ReactElement, index?: number): ReactElement => {
+    if (index != null && typeof node !== 'string') {
       return React.cloneElement(
         node,
         {
           ...node.props,
-          style: { width, marginTop: marginV, ...node.props.style }
+          style: { width, marginTop: marginV, ...node.props.style },
+          key: node.key ?? index
         },
         React.Children.map(node.props.children, child => {
-          return cloneElement(child, false)
+          return cloneElement(child)
         })
       )
     }
@@ -158,7 +157,7 @@ const Waterfall: FC<Props> = props => {
     }
     if (node.props?.children) {
       return React.Children.map(node.props.children, child =>
-        cloneElement(child, false)
+        cloneElement(child)
       )
     }
     return node
@@ -174,11 +173,13 @@ const Waterfall: FC<Props> = props => {
       onScroll={throttle(handleScroll)}
       ref={containerRef}
     >
-      {cols.map((col, i) => (
-        <div key={i} style={{ marginLeft: marginH, width }}>
-          {col.items.map(node => cloneElement(node))}
-        </div>
-      ))}
+      {Array.isArray(children)
+        ? cols.map((col, i) => (
+            <div key={i} style={{ marginLeft: marginH, width }}>
+              {col.items.map((node, i) => cloneElement(node, i))}
+            </div>
+          ))
+        : children}
     </div>
   )
 }
