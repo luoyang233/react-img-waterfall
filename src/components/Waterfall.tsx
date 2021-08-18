@@ -4,9 +4,9 @@ import React, {
   useMemo,
   useRef,
   useState,
-  ReactElement
+  ReactElement,
+  UIEventHandler
 } from 'react'
-import { throttle } from '../utils/throttle'
 
 interface Props {
   children: ReactElement | ReactElement[]
@@ -18,6 +18,7 @@ interface Props {
   wrapClass?: string
   concurrent?: number
   extraItemHeight?: number
+  onScroll?: UIEventHandler<HTMLDivElement>
 }
 
 const Waterfall: FC<Props> = props => {
@@ -30,10 +31,12 @@ const Waterfall: FC<Props> = props => {
     concurrent = 10,
     extraItemHeight = 0,
     wrapClass,
-    children
+    children,
+    onScroll
   } = props
   const loadingRef = useRef(false)
   const containerRef = useRef<any>()
+  const { current: rootMap } = useRef(new Map())
   const [end, setEnd] = useState(0)
   const cols = useMemo(
     () =>
@@ -88,7 +91,16 @@ const Waterfall: FC<Props> = props => {
   }
 
   const round = async () => {
+    if (loadingRef.current) {
+      return
+    }
     if (!Array.isArray(children)) {
+      return
+    }
+    if (end === children.length) {
+      return
+    }
+    if (isOverflow()) {
       return
     }
 
@@ -119,36 +131,40 @@ const Waterfall: FC<Props> = props => {
 
   useEffect(() => {
     setEnd(0)
+    rootMap.clear()
   }, [cols])
 
   useEffect(() => {
-    if (!isOverflow() && !loadingRef.current) {
-      round()
-    }
+    round()
   }, [end])
 
-  const handleScroll = (e: any) => {
-    if (loadingRef.current) {
-      return
-    }
-    if (!isOverflow()) {
-      round()
-    }
+  const handleScroll: UIEventHandler<HTMLDivElement> = e => {
+    onScroll && onScroll(e)
+    round()
   }
 
   const cloneElement = (node: ReactElement, index?: number): ReactElement => {
-    if (index != null && typeof node !== 'string') {
-      return React.cloneElement(
-        node,
-        {
-          ...node.props,
-          style: { width, marginTop: marginV, ...node.props.style },
-          key: node.key ?? index
-        },
-        React.Children.map(node.props.children, child => {
-          return cloneElement(child)
-        })
-      )
+    const isRoot = index != null && typeof node !== 'string'
+    if (isRoot) {
+      const key = node.key ?? index
+      const cache = rootMap.get(node.key)
+      if (cache) {
+        return cache
+      } else {
+        const root = React.cloneElement(
+          node,
+          {
+            ...node.props,
+            style: { width, marginTop: marginV, ...node.props.style },
+            key
+          },
+          React.Children.map(node.props.children, child => {
+            return cloneElement(child)
+          })
+        )
+        rootMap.set(root.key, root)
+        return root
+      }
     }
     if (node.type === 'img') {
       return React.cloneElement(node, {
@@ -170,7 +186,7 @@ const Waterfall: FC<Props> = props => {
         display: 'flex',
         overflow: 'auto'
       }}
-      onScroll={throttle(handleScroll)}
+      onScroll={handleScroll}
       ref={containerRef}
     >
       {Array.isArray(children)

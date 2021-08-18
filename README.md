@@ -71,17 +71,19 @@ npm i react-img-waterfall
 
 ## props
 
-| prop            | 类型   | 默认 | 必要  | 描述                 |
-| --------------- | ------ | ---- | ----- | -------------------- |
-| children        | -      | -    | true  | -                    |
-| col             | number | 3    | false | 列数                 |
-| width           | number | 200  | false | item宽度             |
-| marginH         | number | 10   | false | 列左右间隙           |
-| marginV         | number | 10   | false | item上下间隙         |
-| bufferHeight    | number | 0    | false | 缓冲高度             |
-| wrapClass       | string | -    | false | 容器class            |
-| concurrent      | number | 10   | false | 图片加载并发数量     |
-| extraItemHeight | number | 0    | false | item额外参与计算高度 |
+| prop            | 类型           | 默认 | 必要  | 描述                 |
+| --------------- | -------------- | ---- | ----- | -------------------- |
+| children        | -              | -    | true  | -                    |
+| col             | number         | 3    | false | 列数                 |
+| width           | number         | 200  | false | item宽度             |
+| marginH         | number         | 10   | false | 列左右间隙           |
+| marginV         | number         | 10   | false | item上下间隙         |
+| bufferHeight    | number         | 0    | false | 缓冲高度             |
+| wrapClass       | string         | -    | false | 容器class            |
+| concurrent      | number         | 10   | false | 图片加载并发数量     |
+| extraItemHeight | number         | 0    | false | item额外参与计算高度 |
+| onScroll        | HTMLDivElement | -    | false | 容器滚动事件         |
+
 
 
 ### `width`
@@ -137,3 +139,53 @@ item高度 = 图片高度 + 其余子节点高度 = 图片高度 + `extraItemHei
         ))}
       </Waterfall>
 ```
+
+
+
+## Q
+
+### 更新state引发整个瀑布流重制
+
+```jsx
+export default function App() {
+  const [count, setCount] = useState(0)
+
+  return (
+    <Waterfall>
+      {arr.map((url, i) => (
+        <div>
+          <img src={url} key={i} alt={url} />
+          <button onClick={() => setCount(count + 1)}>{count}</button>
+        </div>
+      ))}
+    </Waterfall>
+  )
+}
+```
+
+这个例子确实会导致整个瀑布流重制，伴随`count`的更新整个app组件会执行一次，`arr.map()`每次执行后都是新的结果，对瀑布流组件来说也就是新的`props.children`
+
+抽离组件，可避免不必要的刷新
+
+```jsx
+export default function App() {
+  return (
+    <Waterfall>
+      {[].map((url, i) => (
+        <div>
+          <img src={url} key={i} alt={url} />
+          <Button/>
+        </div>
+      ))}
+    </Waterfall>
+  )
+}
+
+const Button = () => {
+  const [count, setCount] = useState(0)
+  return <button onClick={() => setCount(count + 1)}>{count}</button>
+}
+```
+
+
+
