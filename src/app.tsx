@@ -27,7 +27,7 @@ export default function App() {
       <button onClick={() => setCol(col - 1)}>col-1</button>
       <button onClick={() => setCol(col + 1)}>col+1</button>
       <button onClick={change}>change</button>
-      <Waterfall wrapClass="container" col={col}>
+      <Waterfall data={source} wrapClass="container" col={col}>
         {source.map((url, i) => (
           <img src={url} key={i} alt={url} />
         ))}

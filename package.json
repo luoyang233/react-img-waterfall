@@ -1,15 +1,16 @@
 {
   "name": "react-img-waterfall",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
   "main": "dist/main.js",
-  "types":"dist/components/Waterfall.d.ts",
+  "types": "dist/components/Waterfall.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
     "start": "webpack serve --open --config webpack.config.dev.js ",
-    "build": "webpack --config webpack.config.prod.js"
+    "build": "webpack --config webpack.config.prod.js",
+    "release": "npm run build && npm publish"
   },
   "keywords": [],
   "author": "",

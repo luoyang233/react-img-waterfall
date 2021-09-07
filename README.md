@@ -74,6 +74,7 @@ npm i react-img-waterfall
 | prop            | 类型           | 默认 | 必要  | 描述                 |
 | --------------- | -------------- | ---- | ----- | -------------------- |
 | children        | -              | -    | true  | -                    |
+| data            | any            | true | false | 数据源               |
 | col             | number         | 3    | false | 列数                 |
 | width           | number         | 200  | false | item宽度             |
 | marginH         | number         | 10   | false | 列左右间隙           |
@@ -83,6 +84,26 @@ npm i react-img-waterfall
 | concurrent      | number         | 10   | false | 图片加载并发数量     |
 | extraItemHeight | number         | 0    | false | item额外参与计算高度 |
 | onScroll        | HTMLDivElement | -    | false | 容器滚动事件         |
+
+
+
+### `data`
+
+数据源，非必传，但**建议传入**，否则会引起瀑布流内部无法按预期更新的问题
+
+瀑布流内部以`data`属性判断数据源是否变更，请保持`data`与map的数据源一致
+
+同时建议`data`属性使用`useMemo`包裹或者通过其他方式，以保持每次更新时引用一致
+
+```jsx
+     	const source = useMemo(()=>[],[]);
+
+      <Waterfall data={source}>
+        {source.map((url, i) => (
+          <img src={url} key={i} alt={url} />
+        ))}
+      </Waterfall>
+```
 
 
 
@@ -139,53 +160,3 @@ item高度 = 图片高度 + 其余子节点高度 = 图片高度 + `extraItemHei
         ))}
       </Waterfall>
 ```
-
-
-
-## Q
-
-### 更新state引发整个瀑布流重制
-
-```jsx
-export default function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <Waterfall>
-      {arr.map((url, i) => (
-        <div>
-          <img src={url} key={i} alt={url} />
-          <button onClick={() => setCount(count + 1)}>{count}</button>
-        </div>
-      ))}
-    </Waterfall>
-  )
-}
-```
-
-这个例子确实会导致整个瀑布流重制，伴随`count`的更新整个app组件会执行一次，`arr.map()`每次执行后都是新的结果，对瀑布流组件来说也就是新的`props.children`
-
-抽离组件，可避免不必要的刷新
-
-```jsx
-export default function App() {
-  return (
-    <Waterfall>
-      {[].map((url, i) => (
-        <div>
-          <img src={url} key={i} alt={url} />
-          <Button/>
-        </div>
-      ))}
-    </Waterfall>
-  )
-}
-
-const Button = () => {
-  const [count, setCount] = useState(0)
-  return <button onClick={() => setCount(count + 1)}>{count}</button>
-}
-```
-
-
-

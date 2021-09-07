@@ -10,6 +10,7 @@ import React, {
 
 interface Props {
   children: ReactElement | ReactElement[]
+  data?: any
   col?: number
   width?: number
   marginH?: number
@@ -32,6 +33,7 @@ const Waterfall: FC<Props> = props => {
     extraItemHeight = 0,
     wrapClass,
     children,
+    data = true,
     onScroll
   } = props
   const loadingRef = useRef(false)
@@ -46,7 +48,7 @@ const Waterfall: FC<Props> = props => {
           height: 0,
           items: []
         })),
-    [col, children]
+    [col, data]
   )
 
   const getLowestCol = () => {
