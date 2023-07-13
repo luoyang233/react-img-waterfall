@@ -1,5 +1,5 @@
 # react-img-waterfall
-可动态加载的React图片瀑布流
+可按需加载的React图片瀑布流
 
 
 ## 特性
@@ -13,7 +13,7 @@
 
 ![react-img-waterfall](https://github.com/luoyang233/blog/blob/master/images/react-img-waterfall.gif)
 
-[线上体验demo](https://codesandbox.io/s/zhong-ji-ban-ben-hvwgk)
+[demo](https://codesandbox.io/s/zhong-ji-ban-ben-hvwgk)
 
 
 ## 使用
@@ -31,19 +31,19 @@ npm i react-img-waterfall
 
 ```jsx
       <Waterfall>
-        {['url_0,url_1,url_2'].map((url, i) => (
+        {source.map((url, i) => (
           <img src={url} key={i} />
         ))}
       </Waterfall>
 ```
 
-约定：**`img`标签可嵌套，但尽量唯一**
+约定：**`img`标签可嵌套在其他节点内，但需唯一**
 
 > 如果子节点中包含多个`img`标签，只取深度优先第一个获取到的img高度，很可能导致高度计算不准确，插入位置错乱的情况
 
 ```jsx
       <Waterfall>
-        {['url_0,url_1,url_2'].map((url, i) => (
+        {source.map((url, i) => (
           <div className="item">
             <img src={url} key={i} />
             <div>others</div>
@@ -52,16 +52,16 @@ npm i react-img-waterfall
       </Waterfall>
 ```
 
-❌ 尽量避免下面的写法
+❌ 避免多个img标签
 
 ```jsx
     <Waterfall>
-      {['url_0,url_1,url_2'].map((url, i) => (
+      {source.map((url, i) => (
         <div className="item">
           <img src={url} key={i} />
           <div>
             {/* ❌避免一个item中出现多个img标签 */}
-            <img src={url} key={i} />
+            <img src={url2} key={i} />
           </div>
         </div>
       ))}
@@ -84,19 +84,17 @@ npm i react-img-waterfall
 | concurrent      | number         | 10   | false | 图片加载并发数量     |
 | extraItemHeight | number         | 0    | false | item额外参与计算高度 |
 | onScroll        | HTMLDivElement | -    | false | 容器滚动事件         |
-
+| onComplete      | Function       | -    | false | 加载完成         |
 
 
 ### `data`
 
-数据源，非必传，但**建议传入**，否则会引起瀑布流内部无法按预期更新的问题
+**建议传入**，否则会引起瀑布流内部无法按预期更新的问题
 
 瀑布流内部以`data`属性判断数据源是否变更，请保持`data`与map的数据源一致
 
-同时建议`data`属性使用`useMemo`包裹或者通过其他方式，以保持每次更新时引用一致
-
 ```jsx
-     	const source = useMemo(()=>[],[]);
+     	const [source] = useState([url_0, url_1, url_2]);
 
       <Waterfall data={source}>
         {source.map((url, i) => (
@@ -117,7 +115,7 @@ npm i react-img-waterfall
 
 ```jsx
       <Waterfall width={500}>
-        {['url_0,url_1,url_2'].map((url, i) => (
+        {source.map((url, i) => (
           // 每个item的宽度都会设置为500
           <div className="item">
             <img src={url} key={i} />
@@ -137,22 +135,20 @@ npm i react-img-waterfall
 
 ### `bufferHeight`
 
-缓冲高度，组件首次会一次性加载`concurrent`张，如果未超过`容器高度`+`缓冲高度`，则会立刻再次加载`concurrent`张，直到超过
-
-用户向下滚动时，`bufferHeight`同样参与计算
+缓冲高度，组件首次会一次性加载`concurrent`张，如果未超过`容器高度`+`缓冲高度`，则会立刻再次加载`concurrent`张
 
 
 ### `extraItemHeight`
 
 额外高度，item默认为img图片提供的高度
 
-item高度 = 图片高度 + 其余子节点高度 = 图片高度 + `extraItemHeight`
+item高度 = 图片高度 + `extraItemHeight`
 
-不传入`extraItemHeight`一般不会造成插入顺序的错误，但可能会引起滚动触发加载不准确的问题
+不传入`extraItemHeight`一般不会造成插入顺序的错误，但可能会引起高度计算问题，导致滚动触发加载不准确
 
 ```jsx
       <Waterfall extraItemHeight={20}>
-        {['url_0,url_1,url_2'].map((url, i) => (
+        {source.map((url, i) => (
           <div className="item">
             <img src={url} key={i} />
             <div style={{ height: '20px' }}>others</div>

@@ -20,6 +20,7 @@ interface Props {
   concurrent?: number
   extraItemHeight?: number
   onScroll?: UIEventHandler<HTMLDivElement>
+  onComplete?: () => void
 }
 
 const Waterfall: FC<Props> = props => {
@@ -34,35 +35,45 @@ const Waterfall: FC<Props> = props => {
     wrapClass,
     children,
     data = true,
-    onScroll
+    onScroll,
+    onComplete
   } = props
+  const [end, setEnd] = useState(0)
+  const [items, setItems] = useState([])
   const loadingRef = useRef(false)
   const containerRef = useRef<any>()
   const { current: rootMap } = useRef(new Map())
-  const [end, setEnd] = useState(0)
-  const cols = useMemo(
-    () =>
-      Array(col)
-        .fill('')
-        .map(() => ({
-          height: 0,
-          items: []
-        })),
-    [col, data]
-  )
+  const rebuildRef = useRef(Symbol())
+  const colsH = useMemo(() => Array(col).fill(0), [data])
+
+  useEffect(() => {
+    setEnd(0)
+    setItems([])
+    rebuildRef.current = Symbol()
+    loadingRef.current = false
+    rootMap.clear()
+  }, [data])
+
+  useEffect(() => {
+    build()
+  }, [end])
 
   const getLowestCol = () => {
-    const minH = Math.min(...cols.map(c => c.height))
-    const col = cols.find(c => c.height === minH)
-    return col
+    const min = Math.min(...colsH)
+    const index = colsH.findIndex(h => h === min)
+    return index
   }
 
   const insert = (node: ReactElement, img: ImageData) => {
-    const col = getLowestCol()
-    col.items.push(node)
-    col.height += img.width
+    const index = getLowestCol()
+    const top = colsH[index]
+    const left = index * (width + marginH)
+    const item = { node, position: [top, left] }
+    const height = img.width
       ? img.height * (width / img.width) + marginV + extraItemHeight
       : 0
+    colsH[index] += height
+    setItems(items => [...items, item])
     setEnd(n => n + 1)
   }
 
@@ -82,29 +93,21 @@ const Waterfall: FC<Props> = props => {
   }
 
   const isOverflow = () => {
-    const minH = Math.min(...cols.map(c => c.height))
+    const minH = Math.min(...colsH)
     const { clientHeight, scrollTop } = containerRef.current
     const currentH = clientHeight + bufferHeight + scrollTop
-    if (minH >= currentH) {
-      return true
-    } else {
-      return false
-    }
+
+    return minH >= currentH
   }
 
-  const round = async () => {
-    if (loadingRef.current) {
-      return
-    }
-    if (!Array.isArray(children)) {
-      return
-    }
+  const build = async () => {
+    if (loadingRef.current) return
+    if (!Array.isArray(children)) return
     if (end === children.length) {
+      onComplete && onComplete()
       return
     }
-    if (isOverflow()) {
-      return
-    }
+    if (isOverflow()) return
 
     loadingRef.current = true
 
@@ -122,8 +125,10 @@ const Waterfall: FC<Props> = props => {
       queue.push(load(getImgUrl(node as ReactElement)))
     })
 
+    const syb = rebuildRef.current
     for (let j = 0; j < queue.length; j++) {
       const img = await queue[j]
+      if (rebuildRef.current !== syb) return
       const node = children[end + j]
       insert(node as ReactElement, img)
     }
@@ -131,18 +136,9 @@ const Waterfall: FC<Props> = props => {
     loadingRef.current = false
   }
 
-  useEffect(() => {
-    setEnd(0)
-    rootMap.clear()
-  }, [cols])
-
-  useEffect(() => {
-    round()
-  }, [end])
-
   const handleScroll: UIEventHandler<HTMLDivElement> = e => {
     onScroll && onScroll(e)
-    round()
+    build()
   }
 
   const cloneElement = (node: ReactElement, index?: number): ReactElement => {
@@ -150,23 +146,20 @@ const Waterfall: FC<Props> = props => {
     if (isRoot) {
       const key = node.key ?? index
       const cache = rootMap.get(node.key)
-      if (cache) {
-        return cache
-      } else {
-        const root = React.cloneElement(
-          node,
-          {
-            ...node.props,
-            style: { width, marginTop: marginV, ...node.props.style },
-            key
-          },
-          React.Children.map(node.props.children, child => {
-            return cloneElement(child)
-          })
-        )
-        rootMap.set(root.key, root)
-        return root
-      }
+      if (cache) return cache
+      const root = React.cloneElement(
+        node,
+        {
+          ...node.props,
+          style: { width, ...node.props.style },
+          key
+        },
+        React.Children.map(node.props.children, child => {
+          return cloneElement(child)
+        })
+      )
+      rootMap.set(root.key, root)
+      return root
     }
     if (node.type === 'img') {
       return React.cloneElement(node, {
@@ -185,16 +178,23 @@ const Waterfall: FC<Props> = props => {
     <div
       className={wrapClass}
       style={{
-        display: 'flex',
+        position: 'relative',
         overflow: 'auto'
       }}
       onScroll={handleScroll}
       ref={containerRef}
     >
       {Array.isArray(children)
-        ? cols.map((col, i) => (
-            <div key={i} style={{ marginLeft: marginH, width }}>
-              {col.items.map((node, i) => cloneElement(node, i))}
+        ? items.map((item, i) => (
+            <div
+              key={i}
+              style={{
+                position: 'absolute',
+                top: item.position[0],
+                left: item.position[1]
+              }}
+            >
+              {cloneElement(item.node, i)}
             </div>
           ))
         : children}
