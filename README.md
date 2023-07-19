@@ -1,5 +1,6 @@
 # react-img-waterfall
 可按需加载的React图片瀑布流
+[![GitHub stars](https://img.shields.io/github/stars/luoyang233/react-img-waterfall.svg?style=social)](https://github.com/luoyang233/react-img-waterfall/stargazers) [![npm version](https://img.shields.io/npm/v/react-img-waterfall.svg)](https://www.npmjs.com/package/react-img-waterfall)
 
 
 ## 特性
