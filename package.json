@@ -1,6 +1,6 @@
 {
   "name": "react-img-waterfall",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "",
   "main": "dist/main.js",
   "types": "dist/components/Waterfall.d.ts",
@@ -12,7 +12,12 @@
     "build": "webpack --config webpack.config.prod.js",
     "release": "npm run build && npm publish"
   },
-  "keywords": [],
+  "keywords": [
+    "react",
+    "waterfall",
+    "img",
+    "lazyload"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
