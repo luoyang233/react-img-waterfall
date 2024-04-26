@@ -1,5 +1,5 @@
 # react-img-waterfall
-可按需加载的React图片瀑布流
+按需懒加载的React图片瀑布流
 
 [![GitHub stars](https://img.shields.io/github/stars/luoyang233/react-img-waterfall.svg?style=social)](https://github.com/luoyang233/react-img-waterfall/stargazers) [![npm version](https://img.shields.io/npm/v/react-img-waterfall.svg)](https://www.npmjs.com/package/react-img-waterfall)
 
@@ -9,9 +9,10 @@
 - 约定传入`img`标签
 - 无需提前传入图片高度
 - 自适应图片大小
-- 动态加载瀑布流
+- 按需加载图片
 - 自定义并发加载数量
 - 缓冲高度
+- 支持异步更新数据源
 
 ![react-img-waterfall](https://github.com/luoyang233/blog/blob/master/images/react-img-waterfall.gif)
 
@@ -70,13 +71,91 @@ npm i react-img-waterfall
     </Waterfall>
 ```
 
+### 异步加载数据
+
+目前只处理向后追加图片数据，向前更新数据不支持
+
+```jsx
+import { Random } from 'mockjs';
+import React, { useEffect, useState } from 'react';
+import Waterfall from "react-img-waterfall";
+
+const randomImg = () => {
+  return Array(20)
+    .fill('')
+    .map((_, i) =>
+      Random.image(`${Math.floor(Math.random() * 200)}x${Math.floor(Math.random() * 50)}`, `#FF6600&text=${i + 1}`)
+    );
+};
+
+export default function App() {
+  const [source, setSource] = useState<string[]>(randomImg());
+
+  const push = () => {
+    setSource(s => [...s, Random.image(`200x200`, '#FF0000')]);
+  };
+
+  return (
+      <Waterfall wrapClass="container" col={3} onComplete={push}>
+        {source.map((url, i) => (
+          <img src={url} key={i} alt={url} />
+        ))}
+      </Waterfall>
+  );
+}
+
+```
+
+
+
+### 更新数据（重新计算）
+
+适用于翻页、向前追加数据等情况
+在数据源更新后，调用`ref.current.reload()`，组件将从新计算整个source（key未变时会从缓存中读取）
+
+```jsx
+import { Random } from 'mockjs';
+import React, { useEffect, useState } from 'react';
+import Waterfall from "react-img-waterfall";
+
+const randomImg = () => {
+  return Array(20)
+    .fill('')
+    .map((_, i) =>
+      Random.image(`${Math.floor(Math.random() * 200)}x${Math.floor(Math.random() * 50)}`, `#FF6600&text=${i + 1}`)
+    );
+};
+
+export default function App() {
+  const [source, setSource] = useState<string[]>(randomImg());
+  const ref = React.useRef<any>();
+
+  const change = () => {
+    setSource(randomImg());
+    ref.current.reload();
+  };
+
+  return (
+    <>
+      <button onClick={change}>change</button>
+      <Waterfall wrapClass="container" col={3} ref={ref}>
+        {source.map((url, i) => (
+          <img src={url} key={i} alt={url} />
+        ))}
+      </Waterfall>
+    </>
+  );
+}
+
+```
+
+
 
 ## props
 
 | prop            | 类型           | 默认 | 必要  | 描述                 |
 | --------------- | -------------- | ---- | ----- | -------------------- |
 | children        | -              | -    | true  | -                    |
-| data            | any            | true | false | 数据源               |
 | col             | number         | 3    | false | 列数                 |
 | width           | number         | 200  | false | item宽度             |
 | marginH         | number         | 10   | false | 列左右间隙           |
@@ -85,25 +164,8 @@ npm i react-img-waterfall
 | wrapClass       | string         | -    | false | 容器class            |
 | concurrent      | number         | 10   | false | 图片加载并发数量     |
 | extraItemHeight | number         | 0    | false | item额外参与计算高度 |
-| onScroll        | HTMLDivElement | -    | false | 容器滚动事件         |
+| onScroll        | Function | -    | false | 容器滚动事件         |
 | onComplete      | Function       | -    | false | 加载完成         |
-
-
-### `data`
-
-**建议传入**，否则会引起瀑布流内部无法按预期更新的问题
-
-瀑布流内部以`data`属性判断数据源是否变更，请保持`data`与map的数据源一致
-
-```jsx
-     	const [source] = useState([url_0, url_1, url_2]);
-
-      <Waterfall data={source}>
-        {source.map((url, i) => (
-          <img src={url} key={i} alt={url} />
-        ))}
-      </Waterfall>
-```
 
 
 
